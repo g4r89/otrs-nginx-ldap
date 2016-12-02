@@ -19,7 +19,7 @@ gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
 
-yum install epel-release wget nginx mariadb-server -y
+yum install epel-release wget git nginx mariadb-server -y
 
 cat <<EOF> /etc/nginx/conf.d/otrs.conf
 server {
@@ -42,7 +42,7 @@ include fastcgi_params;
 }
 EOF
 
-yum install fcgi-devel spawn-fcgi -y
+yum install fcgi-devel spawn-fcgi make -y
 cd /usr/local/src/
 git clone git://github.com/gnosek/fcgiwrap.git
 cd fcgiwrap
