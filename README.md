@@ -100,6 +100,7 @@ mv /opt/otrs-5.0.14 /opt/otrs && cd /opt/otrs
 cp Kernel/Config.pm.dist Kernel/Config.pm
 useradd -d /opt/otrs/ -g nginx -s /sbin/nologin -c 'OTRS System User' otrs
 bin/otrs.SetPermissions.pl --web-group=nginx
+su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.CheckModules.pl"
 
 perl -cw /opt/otrs/bin/cgi-bin/index.pl
 perl -cw /opt/otrs/bin/cgi-bin/customer.pl
