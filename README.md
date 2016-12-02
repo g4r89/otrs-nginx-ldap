@@ -27,6 +27,8 @@ cp nginx.conf /etc/nginx/nginx.conf
 cp default.conf /etc/nginx/conf.d/default.conf
 cp fastcgi-wrapper /usr/local/bin/fastcgi-wrapper.pl
 
+wget http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper -O /usr/bin/fastcgi-wrapper.pl
+
 cat <<EOF> /lib/systemd/system/perl-fcgi.service
 [Unit]
 Description=perl fastcgi service
