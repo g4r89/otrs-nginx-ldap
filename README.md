@@ -44,9 +44,6 @@ ExecStart=/usr/local/bin/fastcgi-wrapper.pl
 ExecStop=/usr/bin/rm -rf /var/run/perl-fcgi
 EOF
 
-sed -i.bak '/SELINUX/s/enforcing/disabled/' /etc/selinux/config
-setenforce 0
-
 cat <<EOF> /etc/my.cnf.d/otrs.cnf
 [mysqld]
 max_allowed_packet   = 20M
@@ -54,10 +51,16 @@ query_cache_size     = 32M
 innodb_log_file_size = 256M
 EOF
 
-systemctl start mariadb
+systemctl enable --now mariadb
 /usr/bin/mysql_secure_installation
 
-/bin/rm /var/lib/mysql/ib_logfile*
+yum install bash-completion perl perl-Archive-Zip perl-Crypt-SSLeay perl-DBI perl-IO-Socket-SSL perl-LDAP perl-Net-DNS perl-Template-Toolkit perl-TimeDate perl-URI perl-XML-LibXML perl-XML-LibXSLT perl-XML-Parser perl-Digest-SHA perl-LWP-Authen-Negotiate perl-DBD-MySQL perl-YAML-LibYAML perl-Crypt-Eksblowfish perl-Mail-IMAPClient perl-Text-CSV_XS perl-core perl-libwww-perl procmail
 
-yum install apr procmail
+wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.14.tar.gz | tar xvz -C /opt/
+mv /opt/otrs-5.0.14 /opt/otrs && cd /opt/otrs
 
+useradd -d /opt/otrs/ -g nginx -s /sbin/nologin -c 'OTRS System User' otrs
+sed -i.bak '/SELINUX/s/enforcing/disabled/' /etc/selinux/config
+setenforce 0
+sytemctl enable --now perl-fcgi
+sytemctl enable --now nginx
