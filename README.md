@@ -1,11 +1,11 @@
 # otrs
 centos7+otrs+nginx+fcgiwrap
-# install
+# install nginx and mysql
 ```bash
-yum update -y
-
 sed -i.bak '/SELINUX/s/enforcing/permissive/' /etc/selinux/config
 setenforce 0
+
+yum update -y
 
 cat <<EOF> /etc/yum.repos.d/nginx.repo
 [nginx]
@@ -25,16 +25,20 @@ EOF
 
 yum install epel-release wget nginx mariadb-server -y
 
+systemctl start mysql
+systemctl enable --now nginx
+systemctl enable --now mariadb
+/usr/bin/mysql_secure_installation
+```
+# Config nxinx and fastcgi-wrapper
+```bash
+mv /etc/nginx/config.d/default.conf{,.bak}
 cat <<EOF> /etc/nginx/conf.d/otrs.conf
 server {
 listen 80;
-server_name otrs.example.com;
+server_name otrs.example.com otrs;
 root /opt/otrs/var/httpd/htdocs;
-
-error_log /var/log/nginx/otrs-error.log warn;
-location = / {
-return 301 https://otrs.HOST/otrs/customer.pl;
-}
+index index.html;
 
 location /otrs-web {
 gzip on;
@@ -42,13 +46,35 @@ alias /opt/otrs/var/httpd/htdocs;
 }
 
 location ~ ^/otrs/(.*.pl)(/.*)?$ {
-fastcgi_pass unix:/var/run/fcgiwrap.sock;
+fastcgi_pass unix:/var/run/otrs/perl_cgi-dispatch.sock;
 fastcgi_index index.pl;
-fastcgi_param SCRIPT_FILENAME /opt/otrs/bin/fcgi-bin/$1;
-include fastcgi_params;
+fastcgi_param SCRIPT_FILENAME   /opt/otrs/bin/fcgi-bin/$1;
+fastcgi_param QUERY_STRING      $query_string;
+fastcgi_param REQUEST_METHOD    $request_method;
+fastcgi_param CONTENT_TYPE      $content_type;
+fastcgi_param CONTENT_LENGTH    $content_length;
+fastcgi_param GATEWAY_INTERFACE CGI/1.1;
+fastcgi_param SERVER_SOFTWARE   nginx;
+fastcgi_param SCRIPT_NAME       $fastcgi_script_name;
+fastcgi_param REQUEST_URI       $request_uri;
+fastcgi_param DOCUMENT_URI      $document_uri;
+fastcgi_param DOCUMENT_ROOT     $document_root;
+fastcgi_param SERVER_PROTOCOL   $server_protocol;
+fastcgi_param REMOTE_ADDR       $remote_addr;
+fastcgi_param REMOTE_PORT       $remote_port;
+fastcgi_param SERVER_ADDR       $server_addr;
+fastcgi_param SERVER_PORT       $server_port;
+fastcgi_param SERVER_NAME       $server_name;
 }
 }
 EOF
+
+wget -O- http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper | sed '/OpenSocket/s/127.0.0.1:8999/\/var\/run\/otrs\/perl_cgi-dispatch.sock/' > /usr/local/bin/fastcgi-wrapper.pl
+
+cat <<EOF> /lib/systemd/system/perl-fcgi.service
+systemctl enable --now perl-fcgi.service
+service nginx restart
+```
 
 yum localinstall https://dl.dropboxusercontent.com/u/2709550/FCGIwrap/fcgiwrap-1.1.0-3.20150530git99c942c.el7.centos.x86_64.rpm -y
 systemctl enable --now fcgiwrap.socket
@@ -60,9 +86,7 @@ query_cache_size     = 32M
 innodb_log_file_size = 256M
 EOF
 
-systemctl start mysql
-systemctl enable --now mariadb
-/usr/bin/mysql_secure_installation
+
 
 mysql -u root -p
 create database `otrs-db` character set utf8;
