@@ -60,6 +60,13 @@ systemctl start mysql
 systemctl enable --now mariadb
 /usr/bin/mysql_secure_installation
 
+mysql -u root -p
+create database `otrs-db` character set utf8;
+create user 'otrs'@'localhost' identified by 'PASS';
+GRANT ALL PRIVILEGES ON `otrs-db`.* to `otrs`@`localhost`;
+FLUSH PRIVILEGES;
+exit;
+
 yum install perl perl-core perl-Archive-Zip perl-Crypt-Eksblowfish perl-Crypt-SSLeay perl-Date-Format perl-DBD-MySQL perl-IO-Socket-SSL perl-JSON-XS perl-Mail-IMAPClient perl-Net-DNS perl-LDAP perl-Template-Toolkit perl-Text-CSV_XS perl-XML-LibXML perl-XML-LibXSLT perl-XML-Parser perl-YAML-LibYAML -y
 
 sed -i.bak '/SELINUX/s/enforcing/disabled/' /etc/selinux/config
