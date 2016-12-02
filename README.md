@@ -42,7 +42,7 @@ include fastcgi_params;
 }
 EOF
 
-yum localinstall https://dl.dropboxusercontent.com/u/2709550/FCGIwrap/fcgiwrap-1.1.0-3.20150530git99c942c.el7.centos.x86_64.rpm
+yum localinstall https://dl.dropboxusercontent.com/u/2709550/FCGIwrap/fcgiwrap-1.1.0-3.20150530git99c942c.el7.centos.x86_64.rpm -y
 systemctl enable --now fcgiwrap.socket
 
 cat <<EOF> /etc/my.cnf.d/otrs.cnf
