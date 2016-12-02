@@ -31,15 +31,23 @@ wget -O- http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper | sed '/Ope
 
 cat <<EOF> /lib/systemd/system/perl-fcgi.service
 [Unit]
-Description=FastCGI Perl Wrapper
-After=network.target
+Description=Perl FastCGI Server
+After=nss-user-lookup.target
 [Service]
-User=otrs
-Group=nginx
-Type=simple
 ExecStart=/usr/local/bin/fastcgi-wrapper.pl
+User=nginx
+Group=nginx
 [Install]
-WantedBy=multi-user.target
+Also=fcgiwrap.socket
+EOF
+
+cat <<EOF> /lib/systemd/system/fcgiwrap.socket
+[Unit]
+Description=FastCGI Wrapper Socket
+[Socket]
+ListenStream=/run/fcgiwrap.sock
+[Install]
+WantedBy=sockets.target
 EOF
 
 cat <<EOF> /etc/my.cnf.d/otrs.cnf
