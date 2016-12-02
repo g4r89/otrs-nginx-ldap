@@ -21,10 +21,27 @@ EOF
 
 yum install epel-release wget nginx mariadb-server -y
 
-mv /etc/nginx/nginx.conf{,.bak}
 mv /etc/nginx/conf.d/default.conf{,.bak}
-cp nginx.conf /etc/nginx/nginx.conf
-cp default.conf /etc/nginx/conf.d/default.conf
+cat <<EOF> /etc/nginx/conf.d/otrs.conf
+server {
+listen 80;
+server_name otrs.example.com otrs;
+root /opt/otrs/var/httpd/htdocs;
+index index.html;
+
+location /otrs-web {
+gzip on;
+alias /opt/otrs/var/httpd/htdocs;
+}
+
+location ~ ^/otrs/(.*.pl)(/.*)?$ {
+fastcgi_pass unix:/var/run/fcgiwrap.sock;
+fastcgi_index index.pl;
+fastcgi_param SCRIPT_FILENAME /opt/otrs/bin/fcgi-bin/$1;
+include fastcgi_params;
+}
+}
+EOF
 
 yum install fcgi-devel spawn-fcgi -y
 cd /usr/local/src/
