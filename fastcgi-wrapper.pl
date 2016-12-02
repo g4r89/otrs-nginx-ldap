@@ -27,7 +27,7 @@ sub daemonize() {
 }
 
 sub main {
-        $socket = FCGI::OpenSocket( "/var/run/perl-fcgi/perl-fcgi.sock", 10 );
+        $socket = FCGI::OpenSocket( "127.0.0.1:8999", 10 ); #use IP sockets
         $request = FCGI::Request( \*STDIN, \*STDOUT, \*STDERR, \%req_params, $socket );
         if ($request) { request_loop()};
             FCGI::CloseSocket( $socket );
