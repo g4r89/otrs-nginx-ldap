@@ -24,9 +24,13 @@ yum install epel-release wget nginx mariadb-server -y
 cat <<EOF> /etc/nginx/conf.d/otrs.conf
 server {
 listen 80;
-server_name otrs.example.com otrs;
+server_name otrs.example.com;
 root /opt/otrs/var/httpd/htdocs;
-index index.html;
+
+error_log /var/log/nginx/otrs-error.log warn;
+location = / {
+return 301 https://otrs.HOST/otrs/customer.pl;
+}
 
 location /otrs-web {
 gzip on;
@@ -58,16 +62,28 @@ systemctl enable --now mariadb
 
 yum install perl perl-core perl-Archive-Zip perl-Crypt-Eksblowfish perl-Crypt-SSLeay perl-Date-Format perl-DBD-MySQL perl-IO-Socket-SSL perl-JSON-XS perl-Mail-IMAPClient perl-Net-DNS perl-LDAP perl-Template-Toolkit perl-Text-CSV_XS perl-XML-LibXML perl-XML-LibXSLT perl-XML-Parser perl-YAML-LibYAML -y
 
+sed -i.bak '/SELINUX/s/enforcing/disabled/' /etc/selinux/config
+setenforce 0
+
 wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.14.tar.gz | tar xvz -C /opt/
 mv /opt/otrs-5.0.14 /opt/otrs && cd /opt/otrs
-cp Kernel/Config.pm.dist Kernel/Config.pm
 useradd -d /opt/otrs/ -g nginx -s /sbin/nologin -c 'OTRS System User' otrs
-/opt/otrs/bin/otrs.SetPermissions.pl --otrs-user=otrs --web-group=nginx
 su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.CheckModules.pl"
+
+cp Kernel/Config.pm.dist Kernel/Config.pm
+for foo in var/cron/*.dist; do mv $foo var/cron/`basename $foo .dist`; done
+cp .procmailrc.dist .procmailrc
+cp .fetchmailrc.dist .fetchmailrc
+cp .mailfilter.dist .mailfilter
 
 perl -cw /opt/otrs/bin/cgi-bin/index.pl
 perl -cw /opt/otrs/bin/cgi-bin/customer.pl
 perl -cw /opt/otrs/bin/otrs.Console.pl
+
+/opt/otrs/bin/otrs.SetPermissions.pl --otrs-user=otrs --web-group=nginx
+
+su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.Console.pl Maint::Config::Rebuild";
+su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.Console.pl Maint::Cache::Delete";
 
 cat <<EOF> /etc/systemd/system/otrs.service
 [Unit]
@@ -82,8 +98,6 @@ ExecStop=/opt/otrs/bin/otrs.Daemon.pl stop
 [Install]
 WantedBy=multi-user.target
 EOF
-
-sed -i.bak '/SELINUX/s/enforcing/disabled/' /etc/selinux/config
 
 systemctl enable --now nginx
 systemctl enable --now otrs.service
