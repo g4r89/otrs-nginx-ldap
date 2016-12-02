@@ -30,7 +30,7 @@ systemctl enable --now nginx
 systemctl enable --now mariadb
 /usr/bin/mysql_secure_installation
 ```
-# Config nxinx and fastcgi-wrapper
+# config nginx and fastcgi-wrapper
 ```bash
 mv /etc/nginx/config.d/default.conf{,.bak}
 cat <<EOF> /etc/nginx/conf.d/otrs.conf
@@ -72,6 +72,20 @@ EOF
 wget -O- http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper | sed '/OpenSocket/s/127.0.0.1:8999/\/var\/run\/otrs\/perl_cgi-dispatch.sock/' > /usr/local/bin/fastcgi-wrapper.pl
 
 cat <<EOF> /lib/systemd/system/perl-fcgi.service
+[Unit]
+Description=otrs-index.pl
+
+[Service]
+ExecStart=/usr/local/bin/fastcgi-wrapper.pl
+Type=forking
+User=otrs
+Group=nginx
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 systemctl enable --now perl-fcgi.service
 service nginx restart
 ```
