@@ -3,6 +3,10 @@ centos7+otrs+nginx+fcgiwrap
 # install
 ```bash
 yum update -y
+
+sed -i.bak '/SELINUX/s/enforcing/permissive/' /etc/selinux/config
+setenforce 0
+
 cat <<EOF> /etc/yum.repos.d/nginx.repo
 [nginx]
 name=nginx repo
@@ -68,9 +72,6 @@ FLUSH PRIVILEGES;
 exit;
 
 yum install perl perl-core perl-Archive-Zip perl-Crypt-Eksblowfish perl-Crypt-SSLeay perl-Date-Format perl-DBD-MySQL perl-IO-Socket-SSL perl-JSON-XS perl-Mail-IMAPClient perl-Net-DNS perl-LDAP perl-Template-Toolkit perl-Text-CSV_XS perl-XML-LibXML perl-XML-LibXSLT perl-XML-Parser perl-YAML-LibYAML -y
-
-sed -i.bak '/SELINUX/s/enforcing/disabled/' /etc/selinux/config
-setenforce 0
 
 wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.14.tar.gz | tar xvz -C /opt/
 mv /opt/otrs-5.0.14 /opt/otrs && cd /opt/otrs
