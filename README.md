@@ -25,30 +25,25 @@ mv /etc/nginx/nginx.conf{,.bak}
 mv /etc/nginx/conf.d/default.conf{,.bak}
 cp nginx.conf /etc/nginx/nginx.conf
 cp default.conf /etc/nginx/conf.d/default.conf
-cp fastcgi-wrapper /usr/local/bin/fastcgi-wrapper.pl
 
-wget -O- http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper | sed '/OpenSocket/s/127\.0\.0\.1\:8999/\/var\/run\/perl-fcgi\/perl-fcgi.sock/' > /usr/local/bin/fastcgi-wrapper.pl
+yum install fcgi-devel spawn-fcgi -y
+cd /usr/local/src/
+git clone git://github.com/gnosek/fcgiwrap.git
+cd fcgiwrap
+autoreconf -i
+./configure
+make
+make install
 
-cat <<EOF> /lib/systemd/system/perl-fcgi.service
-[Unit]
-Description=Perl FastCGI Server
-After=nss-user-lookup.target
-[Service]
-ExecStart=/usr/local/bin/fastcgi-wrapper.pl
-User=nginx
-Group=nginx
-[Install]
-Also=fcgiwrap.socket
-EOF
+cat <<EOF> /etc/sysconfig/spawn-fcgi
+FCGI_SOCKET=/var/run/fcgiwrap.socket
+FCGI_PROGRAM=/usr/local/sbin/fcgiwrap
+FCGI_USER=nginx
+FCGI_GROUP=nginx
+FCGI_EXTRA_OPTIONS="-M 0700"
+OPTIONS="-u $FCGI_USER -g $FCGI_GROUP -s $FCGI_SOCKET -S $FCGI_EXTRA_OPTIONS -F 1 -P /var/run/spawn-fcgi.pid -- $FCGI_PROGRAM"
 
-cat <<EOF> /lib/systemd/system/fcgiwrap.socket
-[Unit]
-Description=FastCGI Wrapper Socket
-[Socket]
-ListenStream=/run/fcgiwrap.sock
-[Install]
-WantedBy=sockets.target
-EOF
+systemctl enable --now spawn-fcgi
 
 cat <<EOF> /etc/my.cnf.d/otrs.cnf
 [mysqld]
