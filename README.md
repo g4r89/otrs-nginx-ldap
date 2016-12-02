@@ -27,23 +27,19 @@ cp nginx.conf /etc/nginx/nginx.conf
 cp default.conf /etc/nginx/conf.d/default.conf
 cp fastcgi-wrapper /usr/local/bin/fastcgi-wrapper.pl
 
-wget http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper -O /usr/bin/fastcgi-wrapper.pl
+wget -O- http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper | sed '/OpenSocket/s/127\.0\.0\.1\:8999/\/var\/run\/perl-fcgi\/perl-fcgi.sock/' > /usr/local/bin/fastcgi-wrapper.pl
 
 cat <<EOF> /lib/systemd/system/perl-fcgi.service
 [Unit]
-Description=perl fastcgi service
+Description=Perl FastCGI service
+BindTo=network.target
 [Install]
 WantedBy=multi-user.target
 [Service]
 User=otrs
 Group=nginx
 Type=simple
-Restart=always
-PermissionsStartOnly=true
-ExecStartPre=/usr/bin/mkdir -p /var/run/perl-fcgi
-ExecStartPre=/usr/bin/chown otrs.nginx /var/run/perl-fcgi
 ExecStart=/usr/local/bin/fastcgi-wrapper.pl
-ExecStop=/usr/bin/rm -rf /var/run/perl-fcgi
 EOF
 
 cat <<EOF> /etc/my.cnf.d/otrs.cnf
