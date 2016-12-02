@@ -1,6 +1,7 @@
 # otrs
 centos7+otrs+nginx+fgci wrapper
 # install
+```bash
 yum update -y
 cat <<EOF > /etc/yum.repos.d/nginx.repo
 [nginx]
