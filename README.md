@@ -3,7 +3,7 @@ centos7+otrs+nginx+fgci wrapper
 # install
 ```bash
 yum update -y
- /etc/yum.repos.d/nginx.repo
+cat <<EOF> /etc/yum.repos.d/nginx.repo
 [nginx]
 name=nginx repo
 baseurl=http://nginx.org/packages/centos/7/\$basearch/
