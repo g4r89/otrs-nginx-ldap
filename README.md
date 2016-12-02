@@ -58,6 +58,7 @@ fastcgi_param SERVER_NAME $server_name;
 EOF
 
 yum install fcgi-devel make git -y
+yum groupinstall 'Development Tools'
 cd /usr/local/src/
 git clone git://github.com/gnosek/fcgiwrap.git
 cd fcgiwrap
@@ -79,7 +80,7 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
-systemctl enable spawn-perl-fcgi.service
+systemctl enable --now spawn-perl-fcgi.service
 
 cat <<EOF> /etc/my.cnf.d/otrs.cnf
 [mysqld]
