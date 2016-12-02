@@ -77,7 +77,7 @@ fastcgi_param SERVER_NAME       $server_name;
 EOF
 
 yum groupinstall 'Development Tools' -y
-yum install fcgi-devel
+yum install fcgi-devel -y
 cd /usr/local/src/
 git clone git://github.com/gnosek/fcgiwrap.git
 cd fcgiwrap
@@ -105,36 +105,15 @@ cat <<EOF> /lib/systemd/system/fcgiwrap.socket
 Description=fcgiwrap Socket
 
 [Socket]
-ListenStream=/run/fcgiwrap.sock
+ListenStream=/var/run/fcgiwrap.sock
 
 [Install]
 WantedBy=sockets.target
 EOF
 
+systemctl enable fcgiwrap.socket
+systemctl enable --now fcgiwrap.service
 
-
-
-
-wget -O- http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper | sed '/OpenSocket/s/127.0.0.1:8999/\/var\/run\/otrs\/perl_cgi-dispatch.sock/' > /usr/local/bin/fastcgi-wrapper.pl
-chmod +x /usr/local/bin/fastcgi-wrapper.pl
-
-cat <<EOF> /lib/systemd/system/perl-fcgi.service
-[Unit]
-Description=otrs-index.pl
-
-[Service]
-ExecStart=/usr/local/bin/fastcgi-wrapper.pl
-Type=forking
-User=otrs
-Group=nginx
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable --now perl-fcgi.service
 service nginx restart
 ```
 # install otrs
