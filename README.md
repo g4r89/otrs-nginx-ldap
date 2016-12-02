@@ -1,5 +1,5 @@
 # otrs
-centos7+otrs+nginx+fgci wrapper
+centos7+otrs+nginx+fcgiwrap
 # install
 ```bash
 yum update -y
