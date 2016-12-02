@@ -1,7 +1,7 @@
 # otrs
 centos7+otrs+nginx+fgci wrapper
 # install
-```bash
+`bash
 yum update -y
 cat <<EOF > /etc/yum.repos.d/nginx.repo
 [nginx]
@@ -11,3 +11,4 @@ gpgcheck=0
 enabled=1
 EOF
 yum install epel-release wget nginx -y
+
