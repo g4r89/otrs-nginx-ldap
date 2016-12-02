@@ -23,7 +23,14 @@ gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 EOF
 
-yum install epel-release wget nginx mariadb-server -y
+yum install epel-release wget nginx mariadb-server perl perl-core -y
+
+cat <<EOF> /etc/my.cnf.d/otrs.cnf
+[mysqld]
+max_allowed_packet   = 20M
+query_cache_size     = 32M
+innodb_log_file_size = 256M
+EOF
 
 systemctl start mysql
 systemctl enable --now nginx
@@ -32,7 +39,7 @@ systemctl enable --now mariadb
 ```
 # config nginx and fastcgi-wrapper
 ```bash
-mv /etc/nginx/config.d/default.conf{,.bak}
+mv /etc/nginx/conf.d/default.conf{,.bak}
 cat <<EOF> /etc/nginx/conf.d/otrs.conf
 server {
 listen 80;
@@ -70,6 +77,7 @@ fastcgi_param SERVER_NAME       $server_name;
 EOF
 
 wget -O- http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper | sed '/OpenSocket/s/127.0.0.1:8999/\/var\/run\/otrs\/perl_cgi-dispatch.sock/' > /usr/local/bin/fastcgi-wrapper.pl
+chmod +x /usr/local/bin/fastcgi-wrapper.pl
 
 cat <<EOF> /lib/systemd/system/perl-fcgi.service
 [Unit]
@@ -81,6 +89,7 @@ Type=forking
 User=otrs
 Group=nginx
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
@@ -89,16 +98,20 @@ EOF
 systemctl enable --now perl-fcgi.service
 service nginx restart
 ```
+# install otrs
+```bash
+yum install perl perl-core perl-Archive-Zip perl-Crypt-Eksblowfish perl-Crypt-SSLeay perl-Date-Format perl-DBD-MySQL perl-IO-Socket-SSL perl-JSON-XS perl-Mail-IMAPClient perl-Net-DNS perl-LDAP perl-Template-Toolkit perl-Text-CSV_XS perl-XML-LibXML perl-XML-LibXSLT perl-XML-Parser perl-YAML-LibYAML -y
+
+wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.14.tar.gz | tar xvz -C /opt/
+mv /opt/otrs-5.0.14 /opt/otrs && cd /opt/otrs
+useradd -d /opt/otrs/ -g nginx -s /sbin/nologin -c 'OTRS System User' otrs
+su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.CheckModules.pl"
+
 
 yum localinstall https://dl.dropboxusercontent.com/u/2709550/FCGIwrap/fcgiwrap-1.1.0-3.20150530git99c942c.el7.centos.x86_64.rpm -y
 systemctl enable --now fcgiwrap.socket
 
-cat <<EOF> /etc/my.cnf.d/otrs.cnf
-[mysqld]
-max_allowed_packet   = 20M
-query_cache_size     = 32M
-innodb_log_file_size = 256M
-EOF
+
 
 
 
@@ -109,12 +122,9 @@ GRANT ALL PRIVILEGES ON `otrs-db`.* to `otrs`@`localhost`;
 FLUSH PRIVILEGES;
 exit;
 
-yum install perl perl-core perl-Archive-Zip perl-Crypt-Eksblowfish perl-Crypt-SSLeay perl-Date-Format perl-DBD-MySQL perl-IO-Socket-SSL perl-JSON-XS perl-Mail-IMAPClient perl-Net-DNS perl-LDAP perl-Template-Toolkit perl-Text-CSV_XS perl-XML-LibXML perl-XML-LibXSLT perl-XML-Parser perl-YAML-LibYAML -y
 
-wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.14.tar.gz | tar xvz -C /opt/
-mv /opt/otrs-5.0.14 /opt/otrs && cd /opt/otrs
-useradd -d /opt/otrs/ -g nginx -s /sbin/nologin -c 'OTRS System User' otrs
-su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.CheckModules.pl"
+
+
 
 cp Kernel/Config.pm.dist Kernel/Config.pm
 for foo in var/cron/*.dist; do mv $foo var/cron/`basename $foo .dist`; done
