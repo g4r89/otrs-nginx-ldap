@@ -21,7 +21,6 @@ EOF
 
 yum install epel-release wget nginx mariadb-server -y
 
-mv /etc/nginx/conf.d/default.conf{,.bak}
 cat <<EOF> /etc/nginx/conf.d/otrs.conf
 server {
 listen 80;
