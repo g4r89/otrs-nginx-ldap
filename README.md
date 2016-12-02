@@ -34,53 +34,16 @@ alias /opt/otrs/var/httpd/htdocs;
 }
 
 location ~ ^/otrs/(.*.pl)(/.*)?$ {
-fastcgi_pass unix:/var/run/cgiwrap-dispatch.sock;
+fastcgi_pass unix:/var/run/fcgiwrap.sock;
 fastcgi_index index.pl;
 fastcgi_param SCRIPT_FILENAME /opt/otrs/bin/fcgi-bin/$1;
-fastcgi_param QUERY_STRING $query_string;
-fastcgi_param REQUEST_METHOD $request_method;
-fastcgi_param CONTENT_TYPE $content_type;
-fastcgi_param CONTENT_LENGTH $content_length;
-fastcgi_param GATEWAY_INTERFACE CGI/1.1;
-fastcgi_param SERVER_SOFTWARE nginx;
-fastcgi_param SCRIPT_NAME $fastcgi_script_name;
-fastcgi_param REQUEST_URI $request_uri;
-fastcgi_param DOCUMENT_URI $document_uri;
-fastcgi_param DOCUMENT_ROOT $document_root;
-fastcgi_param SERVER_PROTOCOL $server_protocol;
-fastcgi_param REMOTE_ADDR $remote_addr;
-fastcgi_param REMOTE_PORT $remote_port;
-fastcgi_param SERVER_ADDR $server_addr;
-fastcgi_param SERVER_PORT $server_port;
-fastcgi_param SERVER_NAME $server_name;
+include fastcgi_params;
 }
 }
 EOF
 
-yum install fcgi-devel spawn-fcgi make git -y
-yum groupinstall 'Development Tools'
-cd /usr/local/src/
-git clone git://github.com/gnosek/fcgiwrap.git
-cd fcgiwrap
-autoreconf -i
-./configure
-make
-make install
-
-cat <<EOF> /lib/systemd/system/spawn-perl-fcgi.service
-[Unit]
-Description=spawn-perl-fcgi
-[Service]
-ExecStart=/usr/bin/spawn-fcgi -u web -g web -M 0775 -F 10 -s /var/run/nginx/cgiwrap-dispatch.sock -U web -G web /usr/local/bin/fcgiwrap
-Type=forking
-User=root
-Group=root
-Restart=always
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable --now spawn-perl-fcgi.service
+yum localinstall https://dl.dropboxusercontent.com/u/2709550/FCGIwrap/fcgiwrap-1.1.0-3.20150530git99c942c.el7.centos.x86_64.rpm
+systemctl enable --now fcgiwrap.socket
 
 cat <<EOF> /etc/my.cnf.d/otrs.cnf
 [mysqld]
@@ -99,14 +62,29 @@ wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.14.tar.gz | tar xvz -C /opt/
 mv /opt/otrs-5.0.14 /opt/otrs && cd /opt/otrs
 cp Kernel/Config.pm.dist Kernel/Config.pm
 useradd -d /opt/otrs/ -g nginx -s /sbin/nologin -c 'OTRS System User' otrs
-bin/otrs.SetPermissions.pl --web-group=nginx
+/opt/otrs/bin/otrs.SetPermissions.pl --otrs-user=otrs --web-group=nginx
 su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.CheckModules.pl"
 
 perl -cw /opt/otrs/bin/cgi-bin/index.pl
 perl -cw /opt/otrs/bin/cgi-bin/customer.pl
 perl -cw /opt/otrs/bin/otrs.Console.pl
 
+cat <<EOF> /etc/systemd/system/otrs.service
+[Unit]
+Description=OTRS Help Desk.
+After=network.target
+[Service]
+Type=forking
+User=otrs
+Group=nginx
+ExecStart=/opt/otrs/bin/otrs.Daemon.pl start
+ExecStop=/opt/otrs/bin/otrs.Daemon.pl stop
+[Install]
+WantedBy=multi-user.target
+EOF
+
 sed -i.bak '/SELINUX/s/enforcing/disabled/' /etc/selinux/config
 setenforce 0
 
 systemctl enable --now nginx
+systemctl enable --now otrs.service
