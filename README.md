@@ -37,12 +37,12 @@ systemctl enable --now nginx
 systemctl enable --now mariadb
 /usr/bin/mysql_secure_installation
 ```
-# config nginx and fastcgi-wrapper
+# config nginx and fcgiwrap
 ```bash
 mv /etc/nginx/conf.d/default.conf{,.bak}
 cat <<EOF> /etc/nginx/conf.d/otrs.conf
 server {
-listen 1.2.3.4:80;
+listen 80;
 server_name otrs.example.com otrs;
 root /opt/otrs/var/httpd/htdocs;
 index index.html;
@@ -75,6 +75,45 @@ fastcgi_param SERVER_NAME       $server_name;
 }
 }
 EOF
+
+yum groupinstall 'Development Tools' -y
+yum install fcgi-devel
+cd /usr/local/src/
+git clone git://github.com/gnosek/fcgiwrap.git
+cd fcgiwrap
+autoreconf -i
+./configure
+make
+make install
+
+cat <<EOF> /lib/systemd/system/fcgiwrap.service
+[Unit]
+Description=Simple CGI Server
+After=nss-user-lookup.target
+
+[Service]
+ExecStart=/usr/sbin/fcgiwrap
+User=nginx
+Group=nginx
+
+[Install]
+Also=fcgiwrap.socket
+EOF
+
+cat <<EOF> /lib/systemd/system/fcgiwrap.socket
+[Unit]
+Description=fcgiwrap Socket
+
+[Socket]
+ListenStream=/run/fcgiwrap.sock
+
+[Install]
+WantedBy=sockets.target
+EOF
+
+
+
+
 
 wget -O- http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper | sed '/OpenSocket/s/127.0.0.1:8999/\/var\/run\/otrs\/perl_cgi-dispatch.sock/' > /usr/local/bin/fastcgi-wrapper.pl
 chmod +x /usr/local/bin/fastcgi-wrapper.pl
