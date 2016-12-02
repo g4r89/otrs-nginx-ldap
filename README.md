@@ -54,13 +54,22 @@ EOF
 systemctl enable --now mariadb
 /usr/bin/mysql_secure_installation
 
-yum install bash-completion perl perl-Archive-Zip perl-Crypt-SSLeay perl-DBI perl-IO-Socket-SSL perl-LDAP perl-Net-DNS perl-Template-Toolkit perl-TimeDate perl-URI perl-XML-LibXML perl-XML-LibXSLT perl-XML-Parser perl-Digest-SHA perl-LWP-Authen-Negotiate perl-DBD-MySQL perl-YAML-LibYAML perl-Crypt-Eksblowfish perl-Mail-IMAPClient perl-Text-CSV_XS perl-core perl-libwww-perl procmail
+yum install perl perl-core perl-Archive-Zip perl-Crypt-Eksblowfish perl-Crypt-SSLeay perl-Date-Format perl-DBD-MySQL perl-IO-Socket-SSL perl-JSON-XS perl-Mail-IMAPClient perl-Net-DNS perl-LDAP perl-Template-Toolkit perl-Text-CSV_XS perl-XML-LibXML perl-XML-LibXSLT perl-XML-Parser perl-YAML-LibYML
 
 wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.14.tar.gz | tar xvz -C /opt/
 mv /opt/otrs-5.0.14 /opt/otrs && cd /opt/otrs
+cp Kernel/Config.pm.dist Kernel/Config.pm
 
-useradd -d /opt/otrs/ -g nginx -s /sbin/nologin -c 'OTRS System User' otrs
+perl -cw /opt/otrs/bin/cgi-bin/index.pl
+perl -cw /opt/otrs/bin/cgi-bin/customer.pl
+perl -cw /opt/otrs/bin/otrs.Console.pl
+
+useradd -d /opt/otrs/ -s /sbin/nologin -c 'OTRS System User' otrs
+usermod -G nginx otrs
+bin/otrs.SetPermissions.pl --web-group=nginx
+
 sed -i.bak '/SELINUX/s/enforcing/disabled/' /etc/selinux/config
 setenforce 0
+
 sytemctl enable --now perl-fcgi
 sytemctl enable --now nginx
