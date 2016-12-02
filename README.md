@@ -84,7 +84,7 @@ WantedBy=multi-user.target
 EOF
 
 sed -i.bak '/SELINUX/s/enforcing/disabled/' /etc/selinux/config
-setenforce 0
 
 systemctl enable --now nginx
 systemctl enable --now otrs.service
+reboot
