@@ -57,7 +57,7 @@ fastcgi_param SERVER_NAME $server_name;
 }
 EOF
 
-yum install fcgi-devel make git -y
+yum install fcgi-devel spawn-fcgi make git -y
 yum groupinstall 'Development Tools'
 cd /usr/local/src/
 git clone git://github.com/gnosek/fcgiwrap.git
