@@ -42,7 +42,7 @@ systemctl enable --now mariadb
 mv /etc/nginx/conf.d/default.conf{,.bak}
 cat <<EOF> /etc/nginx/conf.d/otrs.conf
 server {
-listen 80;
+listen 1.2.3.4:80;
 server_name otrs.example.com otrs;
 root /opt/otrs/var/httpd/htdocs;
 index index.html;
@@ -104,33 +104,9 @@ yum install perl perl-core perl-Archive-Zip perl-Crypt-Eksblowfish perl-Crypt-SS
 
 wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.14.tar.gz | tar xvz -C /opt/
 mv /opt/otrs-5.0.14 /opt/otrs && cd /opt/otrs
+cp Kernel/Config.pm.dist Kernel/Config.pm
 useradd -d /opt/otrs/ -g nginx -s /sbin/nologin -c 'OTRS System User' otrs
 su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.CheckModules.pl"
-
-
-yum localinstall https://dl.dropboxusercontent.com/u/2709550/FCGIwrap/fcgiwrap-1.1.0-3.20150530git99c942c.el7.centos.x86_64.rpm -y
-systemctl enable --now fcgiwrap.socket
-
-
-
-
-
-mysql -u root -p
-create database `otrs-db` character set utf8;
-create user 'otrs'@'localhost' identified by 'PASS';
-GRANT ALL PRIVILEGES ON `otrs-db`.* to `otrs`@`localhost`;
-FLUSH PRIVILEGES;
-exit;
-
-
-
-
-
-cp Kernel/Config.pm.dist Kernel/Config.pm
-for foo in var/cron/*.dist; do mv $foo var/cron/`basename $foo .dist`; done
-cp .procmailrc.dist .procmailrc
-cp .fetchmailrc.dist .fetchmailrc
-cp .mailfilter.dist .mailfilter
 
 perl -cw /opt/otrs/bin/cgi-bin/index.pl
 perl -cw /opt/otrs/bin/cgi-bin/customer.pl
@@ -157,4 +133,3 @@ EOF
 
 systemctl enable --now nginx
 systemctl enable --now otrs.service
-reboot
