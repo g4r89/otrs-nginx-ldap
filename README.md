@@ -51,7 +51,6 @@ http {
 }
 EOF
 
-vi /etc/nginx/conf.d/otrs.conf
 cat <<EOF> /etc/nginx/conf.d/otrs.conf
 server {
 	listen 80;
