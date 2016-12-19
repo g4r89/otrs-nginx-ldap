@@ -16,7 +16,7 @@ cat <<'EOF'> /etc/my.cnf.d/otrs.cnf
 max_allowed_packet   = 20M
 query_cache_size     = 32M
 innodb_log_file_size = 256M
-'EOF'
+EOF
 
 systemctl enable --now mariadb
 /usr/bin/mysql_secure_installation
@@ -51,7 +51,7 @@ http {
 	
 	include /etc/nginx/conf.d/*.conf;
 }
-'EOF'
+EOF
 
 cat <<'EOF'> /etc/nginx/conf.d/otrs.conf
 server {
@@ -72,7 +72,7 @@ location ~ ^/otrs/(.*.pl)(/.*)?$ {
 	include fastcgi_params;
 }
 }
-'EOF'
+EOF
 
 cat <<'EOF'> /usr/local/bin/fastcgi-wrapper.pl
 #!/usr/bin/perl
@@ -175,7 +175,7 @@ sub request_loop {
 
         }
 }
-'EOF'
+EOF
 
 cat <<'EOF'> /lib/systemd/system/perl-fcgi.service
 [Unit]
@@ -193,7 +193,7 @@ ExecStart=/usr/local/bin/fastcgi-wrapper.pl
 
 [Install]
 WantedBy=multi-user.target
-'EOF'
+EOF
 
 chmod +x /usr/local/bin/fastcgi-wrapper.pl
 ```
@@ -227,7 +227,7 @@ ExecStart=/opt/otrs/bin/otrs.Daemon.pl start
 ExecStop=/opt/otrs/bin/otrs.Daemon.pl stop
 [Install]
 WantedBy=multi-user.target
-'EOF'
+EOF
 
 systemctl enable --now nginx
 systemctl enable --now perl-fcgi
