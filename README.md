@@ -1,5 +1,5 @@
 # otrs
-centos7+otrs+nginx+perl-fcgi
+centos7+otrs+nginx+perl-fcgi wrapper
 # install nginx and mysql
 ```bash
 sed -i.bak '/SELINUX/s/enforcing/permissive/' /etc/selinux/config
@@ -9,7 +9,7 @@ yum update -y
 
 yum install epel-release nginx mariadb-server perl perl-core -y
 
-cat <<EOF> /etc/my.cnf.d/server.cnf
+cat <<EOF> /etc/my.cnf.d/otrs.cnf
 [mysqld]
 max_allowed_packet   = 20M
 query_cache_size     = 32M
@@ -18,38 +18,9 @@ EOF
 
 systemctl enable --now mariadb
 /usr/bin/mysql_secure_installation
-
-mysql -u root -p
-create database `otrs-db` character set utf8;
-create user 'USER'@'localhost' identified by 'PASS';
-GRANT ALL PRIVILEGES ON `otrs-db`.* to `USER`@`localhost`;
-FLUSH PRIVILEGES;
-exit;
 ```
-# config nginx and fcgiwrap
+# config nginx and perl-fcgi wrapper
 ```bash
-vi /etc/nginx/conf.d/default.conf
-cat <<EOF> /etc/nginx/conf.d/otrs.conf
-server {
-listen 80;
-server_name otrs.sk2.su otrs;
-root /opt/otrs/var/httpd/htdocs;
-index index.html;
-
-location /otrs-web {
-gzip on;
-alias /opt/otrs/var/httpd/htdocs;
-}
-
-location ~ ^/otrs/(.*.pl)(/.*)?$ {
-fastcgi_pass unix:/var/run/otrs/perl_cgi-dispatch.sock;
-fastcgi_index index.pl;
-fastcgi_param SCRIPT_FILENAME   /opt/otrs/bin/fcgi-bin/$1;
-include fastcgi_params;
-}
-}
-EOF
-
 cat <<EOF> /etc/nginx/nginx.conf
 user nginx;
 worker_processes auto;
@@ -77,6 +48,28 @@ http {
     default_type        application/octet-stream;
 
     include /etc/nginx/conf.d/*.conf;
+}
+EOF
+
+vi /etc/nginx/conf.d/otrs.conf
+cat <<EOF> /etc/nginx/conf.d/otrs.conf
+server {
+listen 80;
+server_name otrs.sk2.su otrs;
+root /opt/otrs/var/httpd/htdocs;
+index index.html;
+
+location /otrs-web {
+gzip on;
+alias /opt/otrs/var/httpd/htdocs;
+}
+
+location ~ ^/otrs/(.*.pl)(/.*)?$ {
+fastcgi_pass unix:/var/run/otrs/perl_cgi-dispatch.sock;
+fastcgi_index index.pl;
+fastcgi_param SCRIPT_FILENAME   /opt/otrs/bin/fcgi-bin/$1;
+include fastcgi_params;
+}
 }
 EOF
 
@@ -112,8 +105,8 @@ sub daemonize() {
 }
 
 sub main {
-        #$socket = FCGI::OpenSocket( "127.0.0.1:8999", 10 ); #use IP sockets
         $socket = FCGI::OpenSocket( "/var/run/otrs/perl_cgi-dispatch.sock", 10 ); #use UNIX sockets - user running this script must have w access to the 'nginx' folder!!
+#	$socket = FCGI::OpenSocket( "127.0.0.1:8999", 10 ); #use IP sockets
         $request = FCGI::Request( \*STDIN, \*STDOUT, \*STDERR, \%req_params, $socket );
         if ($request) { request_loop()};
             FCGI::CloseSocket( $socket );
@@ -183,27 +176,23 @@ sub request_loop {
 }
 EOF
 
-mkdir /var/run/otrs/
-chmod +x /usr/local/bin/fastcgi-wrapper.pl
-
 cat <<EOF> /lib/systemd/system/perl-fcgi.service
 [Unit]
-Description=otrs-index.pl
+Description=perl-fcgi service
 
 [Service]
-ExecStart=/usr/local/bin/fastcgi-wrapper.pl
-Type=forking
 User=otrs
 Group=nginx
+Type=simple
 Restart=always
+PermissionsStartOnly=true
+ExecStartPre=/usr/bin/mkdir -p /var/run/otrs
+ExecStartPre=/usr/bin/chown otrs /var/run/otrs
+ExecStart=/usr/local/bin/fastcgi-wrapper.pl
 
 [Install]
 WantedBy=multi-user.target
 EOF
-
-systemctl enable --now nginx
-systemctl enable --now perl-fcgi
-
 ```
 # install otrs
 ```bash
@@ -239,4 +228,5 @@ WantedBy=multi-user.target
 EOF
 
 systemctl enable --now nginx
-systemctl enable --now otrs.service
+systemctl enable --now perl-fcgi
+systemctl enable --now otrs
