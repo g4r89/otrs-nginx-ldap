@@ -107,7 +107,7 @@ sub daemonize() {
 
 sub main {
         $socket = FCGI::OpenSocket( "/var/run/otrs/perl_cgi-dispatch.sock", 10 ); #use UNIX sockets - user running this script must have w access to the 'nginx' folder!!
-#	$socket = FCGI::OpenSocket( "127.0.0.1:8999", 10 ); #use IP sockets
+#		$socket = FCGI::OpenSocket( "127.0.0.1:8999", 10 ); #use IP sockets
         $request = FCGI::Request( \*STDIN, \*STDOUT, \*STDERR, \%req_params, $socket );
         if ($request) { request_loop()};
             FCGI::CloseSocket( $socket );
