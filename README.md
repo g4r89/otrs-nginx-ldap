@@ -5,6 +5,8 @@ centos7+otrs+nginx+perl-fcgi wrapper
 sed -i.bak '/SELINUX/s/enforcing/permissive/' /etc/selinux/config
 setenforce 0
 
+systemctl disable --now firewalld
+
 yum update -y
 
 yum install epel-release nginx mariadb-server perl perl-core wget -y
@@ -182,7 +184,7 @@ Description=perl-fcgi service
 [Service]
 User=otrs
 Group=nginx
-Type=simple
+Type=forking
 Restart=always
 PermissionsStartOnly=true
 ExecStartPre=/usr/bin/mkdir -p /var/run/otrs
