@@ -28,47 +28,47 @@ error_log /var/log/nginx/error.log;
 pid /run/nginx.pid;
 
 events {
-    worker_connections 1024;
+	worker_connections 1024;
 }
 
 http {
-    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                      '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
+	log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+		'$status $body_bytes_sent "$http_referer" '
+		'"$http_user_agent" "$http_x_forwarded_for"';
+		
+	access_log  /var/log/nginx/access.log  main;
+	
+	sendfile            on;
+	tcp_nopush          on;
+	tcp_nodelay         on;
+	keepalive_timeout   65;
+	types_hash_max_size 2048;
 
-    access_log  /var/log/nginx/access.log  main;
-
-    sendfile            on;
-    tcp_nopush          on;
-    tcp_nodelay         on;
-    keepalive_timeout   65;
-    types_hash_max_size 2048;
-
-    include             /etc/nginx/mime.types;
-    default_type        application/octet-stream;
-
-    include /etc/nginx/conf.d/*.conf;
+	include             /etc/nginx/mime.types;
+	default_type        application/octet-stream;
+	
+	include /etc/nginx/conf.d/*.conf;
 }
 EOF
 
 vi /etc/nginx/conf.d/otrs.conf
 cat <<EOF> /etc/nginx/conf.d/otrs.conf
 server {
-listen 80;
-server_name otrs.sk2.su otrs;
-root /opt/otrs/var/httpd/htdocs;
-index index.html;
+	listen 80;
+	server_name otrs.sk2.su otrs;
+	root /opt/otrs/var/httpd/htdocs;
+	index index.html;
 
 location /otrs-web {
-gzip on;
-alias /opt/otrs/var/httpd/htdocs;
+	gzip on;
+	alias /opt/otrs/var/httpd/htdocs;
 }
 
 location ~ ^/otrs/(.*.pl)(/.*)?$ {
-fastcgi_pass unix:/var/run/otrs/perl_cgi-dispatch.sock;
-fastcgi_index index.pl;
-fastcgi_param SCRIPT_FILENAME   /opt/otrs/bin/fcgi-bin/$1;
-include fastcgi_params;
+	fastcgi_pass unix:/var/run/otrs/perl_cgi-dispatch.sock;
+	fastcgi_index index.pl;
+	fastcgi_param SCRIPT_FILENAME   /opt/otrs/bin/fcgi-bin/$1;
+	include fastcgi_params;
 }
 }
 EOF
