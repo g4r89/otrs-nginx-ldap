@@ -203,9 +203,8 @@ wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.15.tar.gz | tar xvz -C /opt/
 mv /opt/otrs-5.0.15 /opt/otrs && cd /opt/otrs
 useradd -r -d /opt/otrs/ -g nginx -c 'OTRS System User' otrs
 cp Kernel/Config.pm{.dist,}
-cp Kernel/Config/GenericAgent.pm{.dist,}
 bin/otrs.SetPermissions.pl --otrs-user=otrs --web-group=nginx
-bin/bash -c "/opt/otrs/bin/otrs.CheckModules.pl"
+bin/otrs.CheckModules.pl
 
 perl -cw /opt/otrs/bin/cgi-bin/index.pl
 perl -cw /opt/otrs/bin/cgi-bin/customer.pl
