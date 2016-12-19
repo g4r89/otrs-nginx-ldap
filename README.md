@@ -11,19 +11,19 @@ yum update -y
 
 yum install epel-release nginx mariadb-server perl perl-core wget -y
 
-cat <<EOF> /etc/my.cnf.d/otrs.cnf
+cat <<'EOF'> /etc/my.cnf.d/otrs.cnf
 [mysqld]
 max_allowed_packet   = 20M
 query_cache_size     = 32M
 innodb_log_file_size = 256M
-EOF
+'EOF'
 
 systemctl enable --now mariadb
 /usr/bin/mysql_secure_installation
 ```
 # config nginx and perl-fcgi wrapper
 ```bash
-cat <<EOF> /etc/nginx/nginx.conf
+cat <<'EOF'> /etc/nginx/nginx.conf
 user nginx;
 worker_processes auto;
 error_log /var/log/nginx/error.log;
@@ -51,9 +51,9 @@ http {
 	
 	include /etc/nginx/conf.d/*.conf;
 }
-EOF
+'EOF'
 
-cat <<EOF> /etc/nginx/conf.d/otrs.conf
+cat <<'EOF'> /etc/nginx/conf.d/otrs.conf
 server {
 	listen 80;
 	server_name otrs.sk2.su otrs;
@@ -68,13 +68,13 @@ location /otrs-web {
 location ~ ^/otrs/(.*.pl)(/.*)?$ {
 	fastcgi_pass unix:/var/run/otrs/perl_cgi-dispatch.sock;
 	fastcgi_index index.pl;
-	fastcgi_param SCRIPT_FILENAME   /opt/otrs/bin/fcgi-bin/\$1;
+	fastcgi_param SCRIPT_FILENAME   /opt/otrs/bin/fcgi-bin/$1;
 	include fastcgi_params;
 }
 }
-EOF
+'EOF'
 
-cat <<EOF> /usr/local/bin/fastcgi-wrapper.pl
+cat <<'EOF'> /usr/local/bin/fastcgi-wrapper.pl
 #!/usr/bin/perl
 
 use FCGI;
@@ -175,9 +175,9 @@ sub request_loop {
 
         }
 }
-EOF
+'EOF'
 
-cat <<EOF> /lib/systemd/system/perl-fcgi.service
+cat <<'EOF'> /lib/systemd/system/perl-fcgi.service
 [Unit]
 Description=perl-fcgi service
 
@@ -193,7 +193,7 @@ ExecStart=/usr/local/bin/fastcgi-wrapper.pl
 
 [Install]
 WantedBy=multi-user.target
-EOF
+'EOF'
 
 chmod +x /usr/local/bin/fastcgi-wrapper.pl
 ```
@@ -215,7 +215,7 @@ perl -cw /opt/otrs/bin/otrs.Console.pl
 su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.Console.pl Maint::Config::Rebuild";
 su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.Console.pl Maint::Cache::Delete";
 
-cat <<EOF> /etc/systemd/system/otrs.service
+cat <<'EOF'> /etc/systemd/system/otrs.service
 [Unit]
 Description=OTRS Help Desk
 After=network.target
@@ -227,7 +227,7 @@ ExecStart=/opt/otrs/bin/otrs.Daemon.pl start
 ExecStop=/opt/otrs/bin/otrs.Daemon.pl stop
 [Install]
 WantedBy=multi-user.target
-EOF
+'EOF'
 
 systemctl enable --now nginx
 systemctl enable --now perl-fcgi
