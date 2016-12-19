@@ -7,7 +7,7 @@ setenforce 0
 
 yum update -y
 
-yum install epel-release nginx mariadb-server perl perl-core -y
+yum install epel-release nginx mariadb-server perl perl-core wget -y
 
 cat <<EOF> /etc/my.cnf.d/otrs.cnf
 [mysqld]
