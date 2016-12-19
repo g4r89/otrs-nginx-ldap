@@ -193,29 +193,31 @@ ExecStart=/usr/local/bin/fastcgi-wrapper.pl
 [Install]
 WantedBy=multi-user.target
 EOF
+
+chmod +x /usr/local/bin/fastcgi-wrapper.pl
 ```
 # install otrs
 ```bash
 yum install perl perl-core perl-Archive-Zip perl-Crypt-Eksblowfish perl-Crypt-SSLeay perl-Date-Format perl-DBD-MySQL perl-IO-Socket-SSL perl-JSON-XS perl-Mail-IMAPClient perl-Net-DNS perl-LDAP perl-Template-Toolkit perl-Text-CSV_XS perl-XML-LibXML perl-XML-LibXSLT perl-XML-Parser perl-YAML-LibYAML -y
 
-wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.14.tar.gz | tar xvz -C /opt/
-mv /opt/otrs-5.0.14 /opt/otrs && cd /opt/otrs
-cp Kernel/Config.pm.dist Kernel/Config.pm
-useradd -d /opt/otrs/ -g nginx -s /sbin/nologin -c 'OTRS System User' otrs
-su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.CheckModules.pl"
+wget -qO- http://ftp.otrs.org/pub/otrs/otrs-5.0.15.tar.gz | tar xvz -C /opt/
+mv /opt/otrs-5.0.15 /opt/otrs && cd /opt/otrs
+useradd -r -d /opt/otrs/ -g nginx -c 'OTRS System User' otrs
+cp Kernel/Config.pm{.dist,}
+cp Kernel/Config/GenericAgent.pm{.dist,}
+bin/otrs.SetPermissions.pl --otrs-user=otrs --web-group=nginx
+bin/bash -c "/opt/otrs/bin/otrs.CheckModules.pl"
 
 perl -cw /opt/otrs/bin/cgi-bin/index.pl
 perl -cw /opt/otrs/bin/cgi-bin/customer.pl
 perl -cw /opt/otrs/bin/otrs.Console.pl
-
-/opt/otrs/bin/otrs.SetPermissions.pl --otrs-user=otrs --web-group=nginx
 
 su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.Console.pl Maint::Config::Rebuild";
 su otrs -s /bin/bash -c "/opt/otrs/bin/otrs.Console.pl Maint::Cache::Delete";
 
 cat <<EOF> /etc/systemd/system/otrs.service
 [Unit]
-Description=OTRS Help Desk.
+Description=OTRS Help Desk
 After=network.target
 [Service]
 Type=forking
