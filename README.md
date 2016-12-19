@@ -68,7 +68,7 @@ location /otrs-web {
 location ~ ^/otrs/(.*.pl)(/.*)?$ {
 	fastcgi_pass unix:/var/run/otrs/perl_cgi-dispatch.sock;
 	fastcgi_index index.pl;
-	fastcgi_param SCRIPT_FILENAME   /opt/otrs/bin/fcgi-bin/$1;
+	fastcgi_param SCRIPT_FILENAME   /opt/otrs/bin/fcgi-bin/\$1;
 	include fastcgi_params;
 }
 }
