@@ -74,10 +74,11 @@ location ~ ^/otrs/(.*.pl)(/.*)?$ {
 }
 EOF
 
-
 wget -qO- http://nginxlibrary.com/downloads/perl-fcgi/fastcgi-wrapper |\
 sed -e '/OpenSocket/s/127.0.0.1:8999/\/var\/run\/otrs\/perl_cgi-dispatch.sock/' >\
 /usr/local/bin/fastcgi-wrapper.pl
+
+OR
 
 cat <<'EOF'> /usr/local/bin/fastcgi-wrapper.pl
 #!/usr/bin/perl
