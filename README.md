@@ -9,14 +9,13 @@ yum update -y
 
 yum install epel-release nginx mariadb-server perl perl-core -y
 
-cat <<EOF> /etc/my.cnf.d/otrs.cnf
+cat <<EOF> /etc/my.cnf.d/server.cnf
 [mysqld]
 max_allowed_packet   = 20M
 query_cache_size     = 32M
 innodb_log_file_size = 256M
 EOF
 
-systemctl enable --now nginx
 systemctl enable --now mariadb
 /usr/bin/mysql_secure_installation
 
@@ -114,7 +113,7 @@ sub daemonize() {
 
 sub main {
         #$socket = FCGI::OpenSocket( "127.0.0.1:8999", 10 ); #use IP sockets
-        $socket = FCGI::OpenSocket( "/var/run/nginx/perl_cgi-dispatch.sock", 10 ); #use UNIX sockets - user running this script must have w access to the 'nginx' folder!!
+        $socket = FCGI::OpenSocket( "/var/run/otrs/perl_cgi-dispatch.sock", 10 ); #use UNIX sockets - user running this script must have w access to the 'nginx' folder!!
         $request = FCGI::Request( \*STDIN, \*STDOUT, \*STDERR, \%req_params, $socket );
         if ($request) { request_loop()};
             FCGI::CloseSocket( $socket );
@@ -183,6 +182,27 @@ sub request_loop {
         }
 }
 EOF
+
+mkdir /var/run/otrs/
+chmod +x /usr/local/bin/fastcgi-wrapper.pl
+
+cat <<EOF> /lib/systemd/system/perl-fcgi.service
+[Unit]
+Description=otrs-index.pl
+
+[Service]
+ExecStart=/usr/local/bin/fastcgi-wrapper.pl
+Type=forking
+User=otrs
+Group=nginx
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable --now nginx
+systemctl enable --now perl-fcgi
 
 ```
 # install otrs
