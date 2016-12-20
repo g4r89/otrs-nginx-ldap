@@ -232,3 +232,49 @@ EOF
 systemctl enable --now nginx
 systemctl enable --now perl-fcgi
 systemctl enable --now otrs
+
+```perl
+#Start of LDAP auth configuration
+##Agent auth with otrs_agent group
+$Self->{'AuthModule'} = 'Kernel::System::Auth::LDAP';
+$Self->{'AuthModule::LDAP::Host'} = '10.0.14.3';
+$Self->{'AuthModule::LDAP::BaseDN'} = 'dc=sk2,dc=su';
+$Self->{'AuthModule::LDAP::UID'} = 'uid';
+$Self->{'AuthModule::LDAP::SearchUserDN'} = 'cn=reader,dc=sk2,dc=su';
+$Self->{'AuthModule::LDAP::SearchUserPw'} = 'TwGqL63CwTGk3eNP';
+$Self->{'AuthModule::LDAP::GroupDN'} = 'cn=otrs_agent,ou=groups,ou=admins,dc=sk2,dc=su';
+$Self->{'AuthModule::LDAP::AccessAttr'} = 'memberUid';
+$Self->{'AuthModule::LDAP::UserAttr'} = 'UID';
+$Self->{'AuthModule::LDAP::Params'} = {
+port => 389,
+timeout => 120,
+async => 0,
+version => 3,
+};
+
+##LDAP sync and cache agents
+$Self->{'AuthSyncModule'} = 'Kernel::System::Auth::Sync::LDAP';
+$Self->{'AuthSyncModule::LDAP::Host'} = '10.0.14.3';
+$Self->{'AuthSyncModule::LDAP::BaseDN'} = 'dc=sk2,dc=su';
+$Self->{'AuthSyncModule::LDAP::UID'} = 'uid';
+$Self->{'AuthSyncModule::LDAP::UserAttr'} = 'uid';
+$Self->{'AuthSyncModule::LDAP::SearchUserDN'} = 'cn=reader,dc=sk2,dc=su';
+$Self->{'AuthSyncModule::LDAP::SearchUserPw'} = 'pass';
+
+$Self->{'AuthSyncModule::LDAP::UserSyncMap'} = {
+    # DB -> LDAP
+    UserFirstname => 'givenName',
+    UserLastname  => 'sn',
+    UserEmail     => 'mail',
+};
+
+$Self->{'AuthSyncModule::LDAP::UserSyncInitialGroups'} = [
+    'users',
+];
+
+##Assign role for certain LDAP groups
+$Self->{'AuthSyncModule::LDAP::UserSyncRolesDefinition'} = {
+    'cn=otrs_admin,ou=groups,ou=admins,dc=sk2,dc=su' => {
+            'admin' => 1,
+    },
+};
