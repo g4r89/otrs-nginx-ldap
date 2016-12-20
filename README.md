@@ -232,7 +232,7 @@ EOF
 systemctl enable --now nginx
 systemctl enable --now perl-fcgi
 systemctl enable --now otrs
-
+```
 ```perl
 #Start of LDAP auth configuration
 ##Agent auth with otrs_agent group
@@ -278,3 +278,4 @@ $Self->{'AuthSyncModule::LDAP::UserSyncRolesDefinition'} = {
             'admin' => 1,
     },
 };
+```
