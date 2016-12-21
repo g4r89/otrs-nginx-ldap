@@ -243,7 +243,7 @@ $Self->{'AuthModule::LDAP::Host'} = '10.0.14.3';
 $Self->{'AuthModule::LDAP::BaseDN'} = 'dc=sk2,dc=su';
 $Self->{'AuthModule::LDAP::UID'} = 'uid';
 $Self->{'AuthModule::LDAP::SearchUserDN'} = 'cn=reader,dc=sk2,dc=su';
-$Self->{'AuthModule::LDAP::SearchUserPw'} = 'TwGqL63CwTGk3eNP';
+$Self->{'AuthModule::LDAP::SearchUserPw'} = 'pass';
 $Self->{'AuthModule::LDAP::GroupDN'} = 'cn=otrs_agent,ou=groups,ou=admins,dc=sk2,dc=su';
 $Self->{'AuthModule::LDAP::AccessAttr'} = 'memberUid';
 $Self->{'AuthModule::LDAP::UserAttr'} = 'UID';
