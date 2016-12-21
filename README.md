@@ -233,6 +233,8 @@ systemctl enable --now nginx
 systemctl enable --now perl-fcgi
 systemctl enable --now otrs
 ```
+
+# ldap auth
 ```perl
 #Start of LDAP auth configuration
 ##Agent auth with otrs_agent group
