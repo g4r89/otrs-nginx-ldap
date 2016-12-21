@@ -235,6 +235,9 @@ systemctl enable --now otrs
 ```
 
 # ldap auth
+
+vi /opt/otrs/Kernel/Config.pm
+
 ```perl
 #Start of LDAP auth configuration
 ##Agent auth with otrs_agent group
